@@ -24,6 +24,7 @@ export default class UpdateNotification extends React.Component {
     const updater = remote.getGlobal('application').autoUpdateManager;
     const updateAvailable = updater.getState() === 'update-available';
     const info = updateAvailable ? updater.getReleaseDetails() : {};
+    console.log(info);
     return {
       updateAvailable,
       updateIsManual: info.releaseNotes === 'manual-download',

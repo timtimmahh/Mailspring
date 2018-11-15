@@ -1,7 +1,14 @@
-import { EventEmitter } from 'events';
+import {
+  EventEmitter
+} from 'events';
 import https from 'https';
-import { shell } from 'electron';
+import {
+  shell
+} from 'electron';
 import url from 'url';
+import {
+  exec
+} from 'child_process';
 
 export default class AutoupdateImplBase extends EventEmitter {
   supportsUpdates() {
@@ -30,32 +37,37 @@ export default class AutoupdateImplBase extends EventEmitter {
     // Hit the feed URL ourselves and see if an update is available.
     // On linux we can't autoupdate, but we can still show the "update available" bar.
     https
-      .get({ host: feedHost, path: feedPath }, res => {
-        console.log(`Manual update check (${feedHost}${feedPath}) returned ${res.statusCode}`);
+      .get({
+          host: feedHost,
+          path: feedPath,
+        },
+        res => {
+          console.log(`Manual update check (${feedHost}${feedPath}) returned ${res.statusCode}`);
 
-        if (res.statusCode === 204) {
-          successCallback(false);
-          return;
-        }
-
-        let data = '';
-        res.on('error', this.emitError);
-        res.on('data', chunk => {
-          data += chunk;
-        });
-        res.on('end', () => {
-          try {
-            const json = JSON.parse(data);
-            if (!json.url) {
-              this.emitError(new Error(`Autoupdater response did not include URL: ${data}`));
-              return;
-            }
-            successCallback(json);
-          } catch (err) {
-            this.emitError(err);
+          if (res.statusCode === 204) {
+            successCallback(false);
+            return;
           }
-        });
-      })
+
+          let data = '';
+          res.on('error', this.emitError);
+          res.on('data', chunk => {
+            data += chunk;
+          });
+          res.on('end', () => {
+            try {
+              const json = JSON.parse(data);
+              if (!json.url) {
+                this.emitError(new Error(`Autoupdater response did not include URL: ${data}`));
+                return;
+              }
+              successCallback(json);
+            } catch (err) {
+              this.emitError(err);
+            }
+          });
+        }
+      )
       .on('error', this.emitError);
   }
 
@@ -79,6 +91,33 @@ export default class AutoupdateImplBase extends EventEmitter {
 
   /* Public: Install the update. */
   quitAndInstall() {
-    shell.openExternal(this.lastRetrievedUpdateURL || 'https://getmailspring.com/download');
+    //shell.openExternal(this.lastRetrievedUpdateURL || 'https://getmailspring.com/download');
+    doInstall();
+  }
+}
+async function install() {
+  return new Promise(function (resolve, reject) {
+    exec(
+      "pkexec dnf install `curl -sI https://updates.getmailspring.com/download?platform=linuxRpm | grep -oiP '(?<=location: )(.*)(?=\r)'`",
+      (err, stdout, stderr) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve({
+            stdout,
+            stderr,
+          });
+        }
+      }
+    );
+  });
+}
+
+async function doInstall() {
+  let {
+    stdout
+  } = await install();
+  for (let line of stdout.split('\n')) {
+    console.log(`${line}`);
   }
 }
