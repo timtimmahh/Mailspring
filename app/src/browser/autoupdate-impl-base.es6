@@ -1,14 +1,9 @@
-import {
-  EventEmitter
-} from 'events';
+import { EventEmitter } from 'events';
 import https from 'https';
-import {
-  shell
-} from 'electron';
+import { dialog, app } from 'electron';
 import url from 'url';
-import {
-  exec
-} from 'child_process';
+import { exec } from 'child_process';
+var log = require('electron-log');
 
 export default class AutoupdateImplBase extends EventEmitter {
   supportsUpdates() {
@@ -37,7 +32,8 @@ export default class AutoupdateImplBase extends EventEmitter {
     // Hit the feed URL ourselves and see if an update is available.
     // On linux we can't autoupdate, but we can still show the "update available" bar.
     https
-      .get({
+      .get(
+        {
           host: feedHost,
           path: feedPath,
         },
@@ -96,9 +92,10 @@ export default class AutoupdateImplBase extends EventEmitter {
   }
 }
 async function install() {
+  // eslint-disable-next-line prettier/prettier
   return new Promise(function (resolve, reject) {
     exec(
-      "pkexec dnf install `curl -sI https://updates.getmailspring.com/download?platform=linuxRpm | grep -oiP '(?<=location: )(.*)(?=\r)'`",
+      "pkexec dnf install `curl -sI https://updates.getmailspring.com/download?platform=linuxRpm | grep -oiP '(?<=location: )(.*)(?=\r)'` -y",
       (err, stdout, stderr) => {
         if (err) {
           reject(err);
@@ -114,10 +111,12 @@ async function install() {
 }
 
 async function doInstall() {
-  let {
-    stdout
-  } = await install();
-  for (let line of stdout.split('\n')) {
-    console.log(`${line}`);
-  }
+  let { stdout } = await install().catch(err => {
+    log.error('Error updating Mailspring: \n' + err.message);
+    dialog.showErrorBox('Error updating Mailspring', err.message);
+  });
+  log.info('Updated Mailspring: \n' + stdout);
+  dialog.showMessageBox('Updated Mailspring');
+  app.relaunch();
+  app.exit(0);
 }

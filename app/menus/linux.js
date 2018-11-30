@@ -190,6 +190,7 @@ module.exports = {
       label: localized('Help'),
       submenu: [
         { label: 'VERSION', enabled: false },
+        { label: 'Check for update', command: 'application:install-update' },
         { type: 'separator' },
         { label: localized('Mailspring Help'), command: 'application:view-help' },
       ],

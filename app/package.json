@@ -18,6 +18,7 @@
     "collapse-whitespace": "^1.1.6",
     "debug": "github:emorikawa/debug#nylas",
     "electron-spellchecker": "github:bengotow/electron-spellchecker#master",
+    "electron-log": "2.2.17",
     "emoji-data": "^0.2.0",
     "enzyme": "3.3.0",
     "enzyme-adapter-react-16": "^1.1.1",
